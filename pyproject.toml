@@ -1,0 +1,148 @@
+[tool.poetry]
+name = "four-in-a-row-game"
+version = "0.1.0"
+description = "Board game"
+authors = ["Avidor <avidor@synaptixlabs.ai>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "four_in_a_row_game", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pygame = "^2.5.0"
+pydantic = "^2.5.0"
+pydantic-settings = "^2.1.0"
+structlog = "^23.2.0"
+rich = "^13.7.0"
+typer = {extras = ["all"], version = "^0.12.0"}
+
+[tool.poetry.group.dev.dependencies]
+# Testing
+pytest = "^8.0.0"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.12.0"
+pytest-benchmark = "^4.0.0"
+hypothesis = "^6.92.0"
+pytest-xdist = "^3.5.0"
+# Code Quality - Modern 2025 Stack (Ruff-only)
+ruff = "^0.1.11"         # Universal linter + formatter (replaces Black, isort, flake8)
+mypy = "^1.8.0"
+pre-commit = "^3.6.0"
+
+# Documentation
+sphinx = "^7.2.0"
+# Performance Profiling
+py-spy = "^0.3.14"
+memory-profiler = "^0.61.0"
+[tool.poetry.scripts]
+# FIXED: Scripts pointing to actual Python functions
+four_in_a_row_game = "four_in_a_row_game.main:main"
+run = "scripts.cli:run"
+dev = "scripts.cli:dev"
+lint = "scripts.cli:lint"
+test = "scripts.cli:test"
+ci = "scripts.cli:ci"
+format = "scripts.cli:format_code"
+clean = "scripts.cli:clean"
+# Smart coverage commands
+smart-coverage = "scripts.cli:smart_coverage"
+coverage-trend = "scripts.cli:coverage_trend"
+diff-coverage = "scripts.cli:diff_coverage"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# Ruff Configuration (2025 Modern Stack - No Black needed)
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+    "S",   # bandit (security)
+    "PTH", # pathlib
+    "RUF", # Ruff-specific rules
+]
+ignore = [
+    "E501",  # Line too long (handled by formatter)
+    "S101",  # Use of assert (OK in tests)
+    "D",     # pydocstyle (we'll add docs later)
+    "ANN",   # flake8-annotations (we'll add gradually)
+    "COM812", # Trailing comma conflicts with formatter
+    "ISC001", # Single line implicit string concatenation conflicts with formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["S603", "S607"]  # Allow subprocess usage in utility scripts
+"tests/*" = ["S101", "S311", "S106"]  # Allow assert, random, and hardcoded passwords in tests
+"**/conftest.py" = ["RUF013"]   # Allow implicit Optional in test fixtures
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = [
+    "build/",
+    "dist/",
+    "scripts/",  # CLI scripts don't need strict typing
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src/four_in_a_row_game",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-fail-under=60",  # Temporary for Sprint 0 - will increase to 85% in Sprint 1
+    # "-n auto",  # Parallel test execution (disabled for now)
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "benchmark: marks tests as performance benchmarks",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__init__.py",
+    "scripts/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
+precision = 2
+show_missing = true

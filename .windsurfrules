@@ -1,0 +1,363 @@
+# Project Local Rules for Windsurf - 4-in-a-row-game
+
+These rules supplement the Global Operating Rules and provide game development specific guidelines for assistants working on this pygame project. They define the expected coding standards, patterns, and best practices for game development.
+
+---
+
+## ⚠️ CRITICAL: Project State Management
+
+### 🔄 State Tracking Requirements (MANDATORY)
+
+**Windsurf MUST maintain project continuity by updating `state.md` after every significant milestone:**
+
+1. **State Update Triggers** (Update `state.md` immediately after):
+   - ✅ Completing any sprint (Sprint 0, 1, 2, 3)
+   - ✅ Finishing major development milestones
+   - ✅ Completing significant feature implementations
+   - ✅ Before ending any development session
+   - ✅ Major architectural decisions or refactoring
+
+2. **State Update Format** (Required in `state.md`):
+   ```markdown
+   **Last Updated**: [CURRENT_DATE_TIME]
+   **Current Sprint**: [SPRINT_NUMBER_AND_PHASE]
+   **Current Phase**: [DETAILED_DESCRIPTION]
+   **Progress**: [BRIEF_PROGRESS_SUMMARY]
+   
+   ## Development Summary
+   [CONCISE_TEXT_SUMMARY_OF_COMPLETED_WORK]
+   
+   ## Sprint Status
+   - **Sprint N**: [STATUS_EMOJI] [STATUS] - [BRIEF_DESCRIPTION]
+   ```
+
+3. **Session Continuation Protocol**:
+   - **Always read `state.md` first** when returning to project
+   - Provide brief summary of completed work and current objectives
+   - Resume development from exact point indicated in state
+   - **Never start from beginning** if state indicates progress
+
+**This ensures seamless development continuation across Windsurf sessions!**
+
+### 🚀 Project Initialization
+
+**First Time Setup**: When user says:
+```
+I just generated this 4-in-a-row-game project. Please run/execute the start-coding script in .commands/start-coding.md
+```
+
+**Execute**: Follow `.commands/start-coding.md` exactly for:
+- Project structure review
+- TODO assessment and creation
+- Environment validation  
+- State initialization
+- Sprint 1 commencement
+
+---
+
+## General Rules
+
+### 📌 Important Project Rules
+- **Documentation**: Always reference the primary project documentation (`docs/`) before beginning any task.
+- **Sprint Management**: Follow the sprint-based TODO files for structured development.
+- **Team Configuration**: Team members and their roles are outlined in the `.windsurf_config.yaml` file.
+- **Game-First**: All code should prioritize game performance, responsiveness, and user experience.
+
+### 🎮 Game Development Principles
+1. **Frame Rate Priority**: Maintain consistent pygame FPS (target: 60fps). Profile and optimize regularly.
+2. **Event-Driven Architecture**: Use pygame's event system for input handling and game state changes.
+3. **Immutable Game State**: Prefer immutable data structures for game state to enable replay and debugging.
+4. **Clear Separation**: Separate game logic, rendering, input handling, and UI concerns.
+5. **Resource Management**: Properly load/unload assets, use object pooling for frequently created objects.
+
+---
+
+## Game Development Stack Rules
+
+**Stack:** Python 3.12, pygame, Pydantic, structlog
+
+### I. Code Style & Conventions
+
+1. **Game Object Naming:**
+   ```python
+   # Classes: PascalCase for game entities
+   class GameBoard:
+   class PlayerPiece:
+   class AIOpponent:
+   
+   # Functions: snake_case for actions
+   def drop_piece(column: int) -> bool:
+   def check_winner() -> GameResult:
+   def animate_piece_fall(piece: Piece, target_pos: Position) -> None:
+   
+   # Constants: UPPER_SNAKE_CASE
+   BOARD_WIDTH = 7
+   PLAYER_1_COLOR = (255, 0, 0)
+   ```
+
+2. **Game State Management:**
+   ```python
+   # Use enums for game states
+   from enum import Enum
+   
+   class GameState(Enum):
+       MENU = "menu"
+       PLAYING = "playing"
+       PAUSED = "paused"
+       GAME_OVER = "game_over"
+   
+   # Immutable game state with dataclasses
+   from dataclasses import dataclass
+   from typing import List, Optional
+   
+   @dataclass(frozen=True)
+   class BoardState:
+       grid: tuple[tuple[PieceType, ...], ...]
+       current_player: PlayerType
+       last_move: Optional[Move] = None
+       
+       def with_move(self, move: Move) -> 'BoardState':
+           # Return new state with move applied
+           pass
+   ```
+
+3. **pygame Specific Patterns:**
+   ```python
+   import pygame
+   from pygame import Surface, Rect, Color
+   
+   class GameRenderer:
+       def __init__(self, screen: Surface):
+           self.screen = screen
+           self.clock = pygame.time.Clock()
+       
+       def render_frame(self, game_state: GameState) -> None:
+           """Render single frame with consistent timing."""
+           self.screen.fill(Colors.BACKGROUND)
+           self._render_board(game_state.board)
+           self._render_ui(game_state)
+           pygame.display.flip()
+           self.clock.tick(settings.fps)
+   
+   class InputHandler:
+       def handle_events(self) -> List[GameEvent]:
+           """Process pygame events into game events."""
+           events = []
+           for event in pygame.event.get():
+               if event.type == pygame.QUIT:
+                   events.append(GameEvent.QUIT)
+               elif event.type == pygame.MOUSEBUTTONDOWN:
+                   events.append(GameEvent.MOUSE_CLICK(event.pos))
+           return events
+   ```
+
+### II. Architecture Patterns
+
+1. **Game Loop Structure:**
+   ```python
+   class GameEngine:
+       def __init__(self):
+           self.state = GameState.MENU
+           self.renderer = GameRenderer()
+           self.input_handler = InputHandler()
+           self.game_logic = GameLogic()
+       
+       def run(self) -> None:
+           """Main game loop with fixed timestep."""
+           running = True
+           while running:
+               # Handle input
+               events = self.input_handler.handle_events()
+               
+               # Update game state
+               self.state = self.game_logic.update(self.state, events)
+               
+               # Render frame
+               self.renderer.render_frame(self.state)
+               
+               # Check for quit
+               running = self.state != GameState.QUIT
+   ```
+
+2. **Component-Based Entities:**
+   ```python
+   # Prefer composition over inheritance
+   @dataclass
+   class GameObject:
+       position: Position
+       sprite: Optional[Sprite] = None
+       collision: Optional[CollisionBox] = None
+       animation: Optional[Animation] = None
+   
+   class GameObjectManager:
+       def update_animations(self, dt: float) -> None:
+           for obj in self.objects:
+               if obj.animation:
+                   obj.animation.update(dt)
+   ```
+
+3. **Error Handling:**
+   ```python
+   # Use custom exceptions for game-specific errors
+   from core.exceptions import InvalidMoveError, GameStateError
+   
+   def make_move(self, column: int) -> GameResult:
+       if not self.is_valid_column(column):
+           raise InvalidMoveError(f"Invalid column: {column}")
+       
+       if self.is_column_full(column):
+           raise InvalidMoveError(f"Column {column} is full")
+       
+       # Apply move logic
+       return self._apply_move(column)
+   ```
+
+### III. Performance Guidelines
+
+1. **Rendering Optimization:**
+   ```python
+   # Use dirty rectangle updates for better performance
+   class SpriteGroup(pygame.sprite.Group):
+       def draw_optimized(self, surface: Surface) -> List[Rect]:
+           """Return list of dirty rectangles for updating."""
+           dirty_rects = []
+           for sprite in self:
+               if sprite.dirty:
+                   rect = sprite.draw(surface)
+                   dirty_rects.append(rect)
+                   sprite.dirty = False
+           return dirty_rects
+   
+   # Cache expensive calculations
+   @lru_cache(maxsize=1000)
+   def get_piece_position(self, row: int, col: int) -> Position:
+       """Cache board position calculations."""
+       return Position(
+           x=self.board_offset.x + col * self.cell_size,
+           y=self.board_offset.y + row * self.cell_size
+       )
+   ```
+
+2. **Memory Management:**
+   ```python
+   # Object pooling for frequently created objects
+   class ParticlePool:
+       def __init__(self, size: int = 100):
+           self.available = [Particle() for _ in range(size)]
+           self.active = []
+       
+       def get_particle(self) -> Optional[Particle]:
+           if self.available:
+               particle = self.available.pop()
+               self.active.append(particle)
+               return particle
+           return None
+       
+       def return_particle(self, particle: Particle) -> None:
+           if particle in self.active:
+               self.active.remove(particle)
+               particle.reset()
+               self.available.append(particle)
+   ```
+
+### IV. Testing Game Code
+
+1. **Game Logic Testing:**
+   ```python
+   # Test game logic separately from pygame
+   def test_winning_condition():
+       board = create_test_board([
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [1, 1, 1, 1, 0, 0, 0],  # Horizontal win
+       ])
+       
+       result = check_winner(board)
+       assert result == GameResult.WIN_PLAYER_1
+   
+   # Property-based testing for game rules
+   @given(st.integers(0, 6))
+   def test_valid_moves_never_raise_exception(column):
+       game = create_empty_game()
+       assume(not game.is_column_full(column))
+       
+       # Should never raise for valid moves
+       game.make_move(column)
+   ```
+
+2. **Visual Testing:**
+   ```python
+   # Screenshot comparison for UI testing
+   def test_main_menu_appearance():
+       game = GameEngine()
+       game.state = GameState.MENU
+       
+       # Render to surface
+       test_surface = pygame.Surface((800, 600))
+       game.renderer.render_frame(game.state, test_surface)
+       
+       # Compare with reference image
+       assert compare_surfaces(test_surface, "reference_menu.png")
+   ```
+
+### V. Configuration & Settings
+
+1. **Use Pydantic for Settings:**
+   ```python
+   # All settings in config/game_settings.py
+   from pydantic import BaseSettings, Field
+   
+   class GameSettings(BaseSettings):
+       window_width: int = Field(default=800, gt=0)
+       window_height: int = Field(default=600, gt=0)
+       fps: int = Field(default=60, gt=0, le=120)
+       board_cols: int = Field(default=7, ge=4, le=10)
+       
+       class Config:
+           env_file = ".env"
+   ```
+
+2. **Structured Logging:**
+   ```python
+   import structlog
+   
+   logger = structlog.get_logger(__name__)
+   
+   def make_move(self, column: int) -> None:
+       logger.info(
+           "Player move",
+           player=self.current_player,
+           column=column,
+           board_state=self.board.hash()
+       )
+   ```
+
+---
+
+## Quality Standards
+
+### Code Quality Requirements
+- **Test Coverage**: >85% for game logic, >70% for UI code
+- **Performance**: Maintain 60fps under normal gameplay
+- **Memory**: No memory leaks during extended gameplay sessions
+- **Compatibility**: Support Python 3.12+ and pygame latest stable
+
+### Development Workflow
+1. **TDD Approach**: Write tests for game logic before implementation
+2. **Frequent Commits**: Commit working features frequently with clear messages
+3. **Code Reviews**: All changes require review focusing on performance and correctness
+4. **Performance Profiling**: Profile game performance before sprint completion
+
+### Documentation Requirements
+- **Docstrings**: All public functions and classes must have comprehensive docstrings
+- **Architecture Docs**: Update `docs/architecture.md` when adding new systems
+- **Game Design**: Document game rules and mechanics in `docs/game_design.md`
+- **Performance Notes**: Document performance considerations and optimizations
+
+---
+
+**Framework**: pygame  
+**Target Platform**: Desktop (Windows/Mac/Linux)  
+**Performance Target**: 60fps @ 1080p  
+**Code Style**: Ruff + MyPy strict mode

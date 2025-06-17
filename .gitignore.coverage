@@ -1,0 +1,13 @@
+# Smart Coverage Configuration for 4-in-a-row-game
+
+# Coverage history tracking (local state)
+.coverage_history.json
+
+# Temporary coverage files
+.temp_coverage.json
+coverage_report.json
+
+# Coverage output directories
+htmlcov/
+.coverage
+coverage.json
