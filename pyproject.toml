@@ -44,6 +44,8 @@ test = "scripts.cli:test"
 ci = "scripts.cli:ci"
 format = "scripts.cli:format_code"
 clean = "scripts.cli:clean"
+# Infrastructure validation
+validate-infrastructure = "scripts.cli:validate_infrastructure"
 # Smart coverage commands
 smart-coverage = "scripts.cli:smart_coverage"
 coverage-trend = "scripts.cli:coverage_trend"

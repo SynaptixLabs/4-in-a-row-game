@@ -26,8 +26,8 @@ class CoverageRatchet:
         ]
 
         try:
-            result = subprocess.run(cmd, capture_output=True, cwd=self.project_root, text=True)
-            
+            subprocess.run(cmd, capture_output=True, cwd=self.project_root, text=True)
+
             coverage_file = self.project_root / "coverage.json"
             if coverage_file.exists():
                 try:
@@ -64,7 +64,7 @@ class CoverageRatchet:
             return self._fallback_coverage_calculation()
 
         return {"total_coverage": 0.0}
-    
+
     def _fallback_coverage_calculation(self) -> Dict[str, float]:
         """Fallback coverage calculation using basic pytest."""
         try:
@@ -74,30 +74,32 @@ class CoverageRatchet:
                 "pytest",
                 "--cov=src/four_in_a_row_game",
                 "--cov-report=term",
-                "--quiet"
+                "--quiet",
             ]
-            
-            result = subprocess.run(cmd, capture_output=True, cwd=self.project_root, text=True)
-            
+
+            result = subprocess.run(
+                cmd, capture_output=True, cwd=self.project_root, text=True
+            )
+
             # Parse coverage from terminal output
-            for line in result.stdout.split('\n'):
-                if 'TOTAL' in line:
+            for line in result.stdout.split("\n"):
+                if "TOTAL" in line:
                     parts = line.split()
                     for i, part in enumerate(parts):
-                        if part.endswith('%'):
+                        if part.endswith("%"):
                             try:
-                                coverage_pct = float(part.rstrip('%'))
+                                coverage_pct = float(part.rstrip("%"))
                                 return {
                                     "total_coverage": coverage_pct,
                                     "statements": 0,
-                                    "missing": 0
+                                    "missing": 0,
                                 }
                             except ValueError:
                                 continue
-                                
+
         except Exception as e:
             print(f"⚠️  Warning: Fallback coverage calculation failed: {e}")
-            
+
         return {"total_coverage": 0.0}
 
     def get_coverage_history(self) -> Dict[str, Any]:

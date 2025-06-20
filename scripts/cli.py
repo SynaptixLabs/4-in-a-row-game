@@ -21,16 +21,14 @@ def dev():
 
 
 def lint():
-    """Run linting checks."""
-    subprocess.run(["poetry", "run", "ruff", "check", "."], check=True)  # noqa: S603
+    """⚡ Development: Quick linting check (during development)."""
+    subprocess.run(["ruff", "check", "."], check=True)  # noqa: S603
 
 
 def test():
-    """Run tests with coverage."""
+    """⚡ Development: Quick test execution (during development)."""
     subprocess.run(  # noqa: S603
         [
-            "poetry",
-            "run",
             "pytest",
             "--cov=src/four_in_a_row_game",
             "--cov-report=term-missing",
@@ -41,7 +39,7 @@ def test():
 
 
 def ci():
-    """Run full CI pipeline with smart coverage."""
+    """🔬 Sprint End + Pre-Commit: Full quality gates (comprehensive validation)."""
     print("Running CI pipeline with smart coverage...")
     print("=" * 60)
 
@@ -49,19 +47,19 @@ def ci():
     try:
         # Linting
         print("🔍 Running linting...")
-        subprocess.run(["poetry", "run", "ruff", "check", "."], check=True)  # noqa: S603
+        subprocess.run(["ruff", "check", "."], check=True)  # noqa: S603
         print("✅ Linting passed")
         print()
 
         # Formatting check
         print("📐 Checking formatting...")
-        subprocess.run(["poetry", "run", "ruff", "format", "--check", "."], check=True)  # noqa: S603
+        subprocess.run(["ruff", "format", "--check", "."], check=True)  # noqa: S603
         print("✅ Formatting check passed")
         print()
 
         # Type checking
         print("🔧 Running type checks...")
-        subprocess.run(["poetry", "run", "mypy", "src/"], check=True)  # noqa: S603
+        subprocess.run(["mypy", "src/"], check=True)  # noqa: S603
         print("✅ Type checking passed")
         print()
 
@@ -93,7 +91,7 @@ def ci():
         # Fallback to basic coverage
         try:
             subprocess.run(
-                ["poetry", "run", "pytest", "--cov=src", "--cov-fail-under=60"],
+                ["pytest", "--cov=src", "--cov-fail-under=60"],
                 check=True,
             )  # noqa: S603
             print("✅ Basic coverage check passed")
@@ -108,7 +106,7 @@ def ci():
         # Fallback to basic coverage
         try:
             subprocess.run(
-                ["poetry", "run", "pytest", "--cov=src", "--cov-fail-under=60"],
+                ["pytest", "--cov=src", "--cov-fail-under=60"],
                 check=True,
             )  # noqa: S603
             print("✅ Basic coverage check passed")
@@ -118,9 +116,9 @@ def ci():
 
 
 def format_code():
-    """Format code using ruff."""
-    subprocess.run(["poetry", "run", "ruff", "format", "."], check=True)  # noqa: S603
-    subprocess.run(["poetry", "run", "ruff", "check", "--fix", "."], check=True)  # noqa: S603
+    """⚡ Development: Auto-format code (during development)."""
+    subprocess.run(["ruff", "format", "."], check=True)  # noqa: S603
+    subprocess.run(["ruff", "check", "--fix", "."], check=True)  # noqa: S603
 
 
 def profile():
@@ -223,6 +221,13 @@ def diff_coverage():
     except ImportError:
         print("❌ Smart coverage system not available")
         sys.exit(1)
+
+
+def validate_infrastructure():
+    """🏗️ Sprint 0: Validate infrastructure setup (run once at project start)."""
+    from scripts.validate_infrastructure import main as validate_main
+
+    validate_main()
 
 
 def clean():

@@ -69,7 +69,19 @@ If TODO files contain detailed, project-specific tasks:
 2. **🎯 Begin Development**:
    - Proceed directly to Sprint 1 execution
    - Follow the detailed task list from `docs/TODO.4-in-a-row-game.1.md`
-### Step 4: Environment & Infrastructure Validation
+### Step 4: Remote GitHub Repository Setup
+**User Input Required**: Provide GitHub `<org>/<repo>` (or personal username).
+
+**Windsurf Tasks**:
+1. If the repo does not exist, create it via GitHub API.
+2. Initialise local git repo (if not already) and add the remote.
+3. Push an initial commit (template code) to a `main` branch.
+4. Set up GitHub Actions workflow that calls `poetry run ci`.
+5. Confirm CI passes on the remote.
+
+---
+
+### Step 5: Environment & Infrastructure Validation
 **Execute Environment Setup**:
 
 ```bash

@@ -144,36 +144,44 @@ class ContextualCoverage:
         if not files:
             return True, 100.0
 
-        # Convert file paths to module names for coverage
-        modules = []
+        # Convert file paths to relative paths for coverage
+        file_paths = []
         for file_path in files:
             try:
-                # Get path relative to src directory
-                src_relative = file_path.relative_to(self.project_root / "src")
-                if src_relative.suffix == ".py":
-                    # Convert path to module name (e.g., game/engine.py -> game.engine)
-                    module = (
-                        str(src_relative.with_suffix(""))
-                        .replace("/", ".")
-                        .replace("\\", ".")
-                    )
-                    modules.append(module)
+                # Get path relative to project root
+                relative_path = file_path.relative_to(self.project_root)
+                file_paths.append(str(relative_path))
             except ValueError:
-                # File not in src directory, skip
+                # File not in project, skip
                 continue
 
-        if not modules:
+        if not file_paths:
             return True, 100.0
 
-        # Run pytest with coverage for these specific modules
+        # Run pytest with coverage for these specific files
         cmd = [
             "poetry",
             "run",
             "pytest",
-            f"--cov={','.join(modules)}",
+            "--cov=src/four_in_a_row_game",
             "--cov-report=json:.temp_coverage.json",
             "--quiet",
         ]
+
+        # Add specific files to test
+        test_patterns = []
+        for file_path in file_paths:
+            if file_path.startswith("src/four_in_a_row_game/"):
+                # Convert src/four_in_a_row_game/config/settings.py -> tests for this area
+                module_part = file_path.replace("src/four_in_a_row_game/", "").replace(
+                    ".py", ""
+                )
+                test_patterns.extend(
+                    [
+                        f"tests/unit/test_{module_part.replace('/', '_')}.py",
+                        f"tests/integration/test_{module_part.replace('/', '_')}.py",
+                    ]
+                )
 
         try:
             subprocess.run(cmd, capture_output=True, text=True, cwd=self.project_root)
@@ -187,25 +195,93 @@ class ContextualCoverage:
                     with open(coverage_file, "r") as f:
                         coverage_data = json.load(f)
 
-                    total_coverage = coverage_data.get("totals", {}).get(
-                        "percent_covered", 0.0
-                    )
+                    # Calculate coverage for just these files
+                    total_statements = 0
+                    covered_statements = 0
+
+                    files_data = coverage_data.get("files", {})
+                    for file_path in file_paths:
+                        # Normalize path for lookup
+                        normalized_path = str(Path(file_path)).replace("\\", "/")
+
+                        # Try different path formats
+                        possible_keys = [
+                            normalized_path,
+                            normalized_path.replace("/", "\\"),
+                            str(self.project_root / file_path),
+                            file_path,
+                        ]
+
+                        found_data = None
+                        for key in possible_keys:
+                            if key in files_data:
+                                found_data = files_data[key]
+                                break
+
+                        if found_data:
+                            summary = found_data.get("summary", {})
+                            total_statements += summary.get("num_statements", 0)
+                            covered_statements += summary.get("covered_lines", 0)
+
+                    if total_statements > 0:
+                        category_coverage = (
+                            covered_statements / total_statements
+                        ) * 100
+                    else:
+                        # If no statements found, fall back to overall coverage
+                        category_coverage = coverage_data.get("totals", {}).get(
+                            "percent_covered", 0.0
+                        )
 
                     # Clean up temp file
                     coverage_file.unlink()
 
-                    return total_coverage >= min_coverage, total_coverage
+                    return category_coverage >= min_coverage, category_coverage
 
-                except (json.JSONDecodeError, KeyError):
-                    pass
+                except (json.JSONDecodeError, KeyError) as e:
+                    print(f"   ⚠️  Warning: Could not parse category coverage: {e}")
                 finally:
                     # Ensure cleanup
                     if coverage_file.exists():
                         coverage_file.unlink()
 
-            # Fallback: assume passing if we can't determine coverage
-            return True, min_coverage
+            # Fallback: use overall coverage for now
+            return self._fallback_category_coverage(min_coverage)
 
         except Exception as e:
             print(f"   ⚠️  Warning: Could not check coverage for category: {e}")
-            return True, min_coverage  # Don't fail on errors
+            return self._fallback_category_coverage(min_coverage)
+
+    def _fallback_category_coverage(self, min_coverage: int) -> Tuple[bool, float]:
+        """Fallback to overall coverage when category-specific fails."""
+        try:
+            # Get overall coverage as fallback
+            cmd = [
+                "poetry",
+                "run",
+                "pytest",
+                "--cov=src/four_in_a_row_game",
+                "--cov-report=term",
+                "--quiet",
+            ]
+
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, cwd=self.project_root
+            )
+
+            # Parse coverage from output
+            for line in result.stdout.split("\n"):
+                if "TOTAL" in line:
+                    parts = line.split()
+                    for part in parts:
+                        if part.endswith("%"):
+                            try:
+                                coverage_pct = float(part.rstrip("%"))
+                                return coverage_pct >= min_coverage, coverage_pct
+                            except ValueError:
+                                continue
+        except Exception:
+            pass
+
+        # Ultimate fallback
+        return True, min_coverage

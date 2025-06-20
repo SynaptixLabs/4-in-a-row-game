@@ -12,7 +12,7 @@ from typing import Protocol
 
 import pygame
 
-from four_in_a_row_game.core.config import GameConfig
+from four_in_a_row_game.config.game_settings import GameSettings
 from four_in_a_row_game.game.game_state import GameState
 from four_in_a_row_game.ui.renderer import Renderer
 
@@ -51,7 +51,7 @@ class GameEngine:
     Extend or modify this class to implement your specific game.
     """
 
-    def __init__(self, config: GameConfig):
+    def __init__(self, config: GameSettings) -> None:
         """Initialize the game engine."""
         self.config = config
         self.running = False
@@ -60,8 +60,10 @@ class GameEngine:
         self.game_state = GameState()
         self.renderer = Renderer(config)
 
-        # TODO: Initialize your specific game logic here
-        self.game_logic: GameLogic | None = None
+        # Initialize Connect-Four-specific logic
+        from four_in_a_row_game.game.connect_four_logic import ConnectFourLogic
+
+        self.game_logic = ConnectFourLogic(config)
         logger.info("Game engine initialized")
 
     def run(self) -> int:
@@ -77,7 +79,7 @@ class GameEngine:
         try:
             while self.running:
                 # Calculate delta time
-                dt = self.clock.tick(self.config.target_fps) / 1000.0
+                dt = self.clock.tick(self.config.fps) / 1000.0
 
                 # Handle events
                 events = pygame.event.get()

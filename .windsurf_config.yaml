@@ -171,6 +171,16 @@ tool_configs:
     disallow_untyped_defs: true
     strict_optional: true
 
+# --- Repo & CI Discipline ---
+repo_ci_policy:
+  description: >-
+    The GitHub repository MUST exist and be configured locally before Sprint 1 starts. For every sprint (and any major feature branch) Windsurf must:
+      1. Create or switch to a feature branch.
+      2. Run `poetry run ci` locally.
+      3. Commit with Conventional-Commit message.
+      4. Push and open a PR targeting `main`.
+      5. Verify CI pipeline passes on GitHub.
+
 # Performance monitoring
 performance_config:
   target_metrics:

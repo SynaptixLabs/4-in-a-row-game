@@ -81,14 +81,24 @@ repos:
   # Local hooks for project-specific checks
   - repo: local
     hooks:
-      # Run tests before commit
+      # Comprehensive quality gates (final check)
+      - id: ci-pipeline
+        name: 🔬 Full CI Pipeline (comprehensive validation)
+        entry: poetry run ci
+        language: system
+        pass_filenames: false
+        stages: [commit]
+        always_run: true
+        verbose: true
+
+      # Run tests before commit (fallback if ci fails)
       - id: pytest
-        name: Run tests
+        name: Run tests (fallback)
         entry: poetry run pytest
         language: system
         types: [python]
         pass_filenames: false
-        stages: [commit]
+        stages: [manual]
         args: ["--tb=short", "-q"]
 
       # Check game constants for valid values

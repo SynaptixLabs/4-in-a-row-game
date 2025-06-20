@@ -95,22 +95,42 @@ This script provides Windsurf with specific, actionable instructions for setting
 
 ## 📊 Development Workflow
 
-### Daily Development
+### Sprint 0: Project Setup
 ```bash
-# Start development session
-poetry run dev              # Start game in development mode
+# After project generation
+poetry install
+poetry run validate-infrastructure  # ✅ Required for Sprint 0 completion
 
-# Code quality checks
-poetry run lint             # Run linting and formatting
-poetry run test             # Run tests with coverage
-poetry run ci               # Run complete CI pipeline locally
+# Expected: 🎉 Sprint 0 Infrastructure: COMPLETE
 ```
 
-### Quality-First Development
-1. **Execute Initialization**: Use `.commands/init.md` with Windsurf guidance
-2. **Quality Validation**: Ensure all tests pass and coverage >85%
-3. **Performance Check**: Validate 60fps target maintained
-4. **Continuous Integration**: Automated quality gates on every commit
+### Development (Sprint 1+): Daily Workflow
+```bash
+# Quick checks during development
+poetry run test             # ⚡ Quick testing (~45s)
+poetry run lint             # ⚡ Quick linting (~10s)
+poetry run format           # ⚡ Auto-format code (~5s)
+
+# Start development session
+poetry run dev              # Start game in development mode
+```
+
+### Sprint End + Pre-Commit: Comprehensive Validation
+```bash
+# Before every commit and sprint completion
+poetry run ci               # 🔬 Full quality gates (~3min)
+
+# Expected: 🎉 All CI checks passed!
+```
+
+### Command Usage Guide
+| Command | When | Purpose | Duration |
+|---------|------|---------|----------|
+| `validate-infrastructure` | Sprint 0 only | Environment setup | ~30s |
+| `lint`, `test`, `format` | During development | Quick feedback | ~10-45s |
+| `ci` | Pre-commit + Sprint end | Comprehensive validation | ~3min |
+
+📖 **Full workflow guide**: See `docs/development-workflow.md`
 
 ## 🧪 Testing & Quality
 
@@ -192,11 +212,21 @@ MIT License - see LICENSE file for details.
 
 ## 🤝 Contributing
 
-1. Use `.commands/start-coding.md` for project initialization with Windsurf
-2. Follow structured development approach with state tracking
-3. Maintain 60fps performance and >85% test coverage
-4. **Windsurf must update `state.md`** after completing sprints/milestones
-5. Update documentation for any architectural changes
+1. **Clone & install**
+   ```bash
+   git clone https://github.com/<ORG>/<REPO>.git
+   cd 4-in-a-row-game
+   poetry install
+   ```
+2. **Daily quality gate** – run `poetry run ci` before every commit and PR.
+3. **Commit style** – Conventional Commits (`feat:`, `fix:`, `docs:` …).
+4. **Branch & PR flow**
+   1. Create a feature branch (`git checkout -b feat/<ticket>`)
+   2. Push branch and open a PR to `main`.
+   3. CI (GitHub Actions) must pass before review can be merged.
+5. **Windsurf automation** – use `.commands/start-coding.md` for initialization; Windsurf updates `state.md` after each milestone.
+6. **Performance & coverage targets** – sustain 60 fps and maintain ≥85 % unit-test coverage.
+7. Keep documentation current when architecture or workflow changes.
 
 ---
 
