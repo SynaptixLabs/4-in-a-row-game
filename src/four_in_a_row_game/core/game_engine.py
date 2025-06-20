@@ -116,26 +116,32 @@ class GameEngine:
         # Update core systems
         self.game_state.update(dt)
 
-        # TODO: Add your core game updates here
+        # --- Input hover column tracking ---
+        mouse_x, _ = pygame.mouse.get_pos()
+        self._hover_col = None
+        if self.renderer.screen:
+            board_w = self.config.window_size[0]
+            cols = self.config.board_width
+            cell_size = (board_w - 40) // cols  # assumes margin 20 like renderer
+            board_x = (self.config.window_size[0] - (cell_size * cols)) // 2
+            rel_x = mouse_x - board_x
+            if 0 <= rel_x < cell_size * cols:
+                self._hover_col = rel_x // cell_size
 
-        # Delegate to game-specific logic
-        if self.game_logic:
-            self.game_logic.update(dt, self.game_state)
+        # Update logic
+        self.game_logic.update(dt, self.game_state)
 
-            # Check for game over conditions
-            if self.game_logic.is_game_over(self.game_state):
-                self.handle_game_over()
+
+        # Check for game over conditions
+        if self.game_logic.is_game_over(self.game_state):
+            self.handle_game_over()
 
     def render(self) -> None:
         """Render the current frame."""
         self.renderer.clear()
-
-        # TODO: Add your rendering calls here
-        # Example:
-        # self.renderer.draw_background()
-        # self.renderer.draw_game_objects(self.game_state.objects)
-        # self.renderer.draw_ui(self.game_state.ui_elements)
-
+        if hasattr(self.renderer, "draw_board"):
+            self.renderer.draw_board(self.game_logic.board, getattr(self, "_hover_col", None))
+        # Future: draw turn indicator here
         self.renderer.present()
 
     def handle_game_over(self) -> None:
